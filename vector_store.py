@@ -1,29 +1,45 @@
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+import os
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.docstore.document import Document
+import streamlit as st
 
-# Embedding model
-embedding_model = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
-)
+class ResearchVectorStore:
+    def __init__(self):
+        # Use a lightweight, high-performance model for 2026 standards
+        self.embeddings = HuggingFaceEmbeddings(
+            model_name="sentence-transformers/all-MiniLM-L6-v2",
+            model_kwargs={'device': 'cpu'}
+        )
+        self.text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=1000,
+            chunk_overlap=150,
+            length_function=len
+        )
 
-embedding_model = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
-)
+    def create_store(self, text: str, source_name: str = "Research Paper"):
+        """Converts raw text into a searchable FAISS index."""
+        if not text.strip():
+            return None
+            
+        # 1. Create Document objects
+        docs = [Document(page_content=text, metadata={"source": source_name})]
+        
+        # 2. Split into chunks
+        chunks = self.text_splitter.split_documents(docs)
+        
+        # 3. Build Vector Store
+        vector_db = FAISS.from_documents(chunks, self.embeddings)
+        return vector_db
 
+    def similarity_search(self, vector_db, query: str, k: int = 3):
+        """Retrieves the top K relevant chunks for a given query."""
+        if vector_db is None:
+            return "No vector store available to search."
+            
+        results = vector_db.similarity_search(query, k=k)
+        return "\n\n".join([res.page_content for res in results])
 
-def create_vector_store(text):
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000,
-        chunk_overlap=200
-    )
-
-    chunks = splitter.split_text(text)
-    vector_db = FAISS.from_texts(chunks, embedding_model)
-
-    return vector_db
-
-
-def retrieve_context(vector_db, query, k=5):
-    docs = vector_db.similarity_search(query, k=k)
-    return "\n\n".join([doc.page_content for doc in docs])
+# Singleton instance to be used across the LangGraph nodes
+research_memory = ResearchVectorStore()
