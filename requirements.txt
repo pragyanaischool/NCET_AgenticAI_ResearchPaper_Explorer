@@ -4,6 +4,8 @@ crewai
 langchain
 langchain-core
 langchain-groq
+litellm==1.35.0
+groq
 langchain-community
 langchain-text-splitters
 langchain-huggingface
