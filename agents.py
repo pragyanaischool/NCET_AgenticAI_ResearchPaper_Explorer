@@ -3,7 +3,8 @@ from langchain_groq import ChatGroq
 from langchain_community.utilities import SerpAPIWrapper
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+# CORRECT IMPORT FOR 2026:
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from dotenv import load_dotenv
 
 load_dotenv()
