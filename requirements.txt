@@ -14,7 +14,7 @@ langchain-groq
 langchain-community
 langchain-text-splitters
 langchain-huggingface[full]  # [full] includes sentence-transformers & transformers
-
+torchvision
 # --- LLM Providers & Search ---
 groq
 google-search-results
