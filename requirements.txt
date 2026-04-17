@@ -2,12 +2,9 @@
 streamlit>=1.40.0
 python-dotenv
 
-# --- AI Orchestration (CrewAI & LiteLLM) ---
-# Note: Using >=1.83.0 fixes the litellm import error seen in your logs
-crewai>=0.100.0
-litellm>=1.83.0
-
 # --- LangChain Ecosystem ---
+# LangGraph Core
+langgraph
 langchain>=0.3.0
 langchain-core
 langchain-groq
