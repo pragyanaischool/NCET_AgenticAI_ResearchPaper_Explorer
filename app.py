@@ -1,29 +1,32 @@
 import streamlit as st
+from typing import TypedDict, List
 from langgraph.graph import StateGraph, END
-from state import AgentState
-from nodes import research_node, analysis_node # Assume analysis_node is defined similarly
+from agents import ResearchNodes
 
-# Build the Graph
-workflow = StateGraph(AgentState)
+# 1. Define State
+class GraphState(TypedDict):
+    topic: str
+    messages: List[str]
+    data: str
+    summary: str
 
-workflow.add_node("researcher", research_node)
-workflow.add_node("analyzer", analysis_node)
+# 2. Build Graph
+nodes = ResearchNodes()
+workflow = StateGraph(GraphState)
 
-# Define the sequence
-workflow.set_entry_point("researcher")
-workflow.add_edge("researcher", "analyzer")
-workflow.add_edge("analyzer", END)
+workflow.add_node("research", nodes.researcher)
+workflow.add_node("analyze", nodes.analyst)
 
-# Compile
-app_engine = workflow.compile()
+workflow.set_entry_point("research")
+workflow.add_edge("research", "analyze")
+workflow.add_edge("analyze", END)
 
-# Streamlit UI
-st.title("NCET AgenticAI Explorer")
-user_input = st.text_input("Enter topic:")
+app = workflow.compile()
 
-if st.button("Explore"):
-    initial_state = {"topic": user_input, "messages": [], "research_data": [], "status": "Started"}
-    # Run the graph
-    config = {"configurable": {"thread_id": "1"}}
-    final_state = app_engine.invoke(initial_state, config)
-    st.write(final_state['messages'][-1].content)
+# 3. Streamlit UI
+st.title("NCET Research Explorer")
+query = st.text_input("Topic:")
+
+if st.button("Run"):
+    results = app.invoke({"topic": query, "messages": []})
+    st.markdown(results["summary"])
