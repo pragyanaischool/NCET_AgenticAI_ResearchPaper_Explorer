@@ -10,7 +10,8 @@ from vector_store import create_vector_store, retrieve_context
 # =========================
 # LLM
 # =========================
-llm = ChatGroq(model="llama3-70b-8192")
+groq_api_key = st.secrets["GROQ_API_KEY"]
+llm = ChatGroq(groq_api_key=groq_api_key, model="llama-3.3-70b-versatile")
 
 st.title("📚 AI Research Assistant (RAG + Debate AI)")
 
