@@ -9,61 +9,19 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-class ResearchAgents:
+class ResearchNodes:
     def __init__(self):
-        # Initialize the LLM (Groq)
-        self.llm = ChatGroq(
-            temperature=0, 
-            model_name="openai/gpt-oss-120b",
-            groq_api_key=os.getenv("GROQ_API_KEY")
-        )
-        # Initialize Search Tool
-        self.search_tool = SerpAPIWrapper()
+        self.llm = ChatGroq(model_name="llama3-70b-8192")
+        self.search = SerpAPIWrapper()
 
-    def researcher_node(self, state):
-        """
-        The Research Agent: Searches for papers and extracts content.
-        """
-        topic = state.get("topic")
-        print(f"--- RESEARCHING: {topic} ---")
-        
-        # 1. Web Search for papers
-        search_query = f"latest research papers and PDF links for {topic}"
-        raw_results = self.search_tool.run(search_query)
-        
-        # 2. Update state with raw findings
-        return {
-            "research_notes": [raw_results],
-            "status": "analyzing"
-        }
+    def researcher(self, state):
+        """Node for gathering data."""
+        topic = state["topic"]
+        results = self.search.run(f"Latest papers on {topic}")
+        return {"messages": [f"Researcher found: {results[:200]}..."], "data": results}
 
-    def analyst_node(self, state):
-        """
-        The Analyst Agent: Synthesizes search results into a structured format.
-        """
-        notes = "\n".join(state.get("research_notes", []))
-        topic = state.get("topic")
-        print(f"--- ANALYZING FINDINGS ---")
-
-        prompt = (
-            f"You are a Senior Research Analyst. Based on these raw notes: {notes}, "
-            f"provide a structured breakdown of the key breakthroughs in {topic}. "
-            f"Focus on methodology and practical applications."
-        )
-        
-        analysis = self.llm.invoke(prompt)
-        
-        return {
-            "final_summary": analysis.content,
-            "status": "completed"
-        }
-
-    def technical_writer_node(self, state):
-        """
-        Optional: Converts analysis into a formal LaTeX or Markdown report.
-        """
-        analysis = state.get("final_summary")
-        prompt = f"Convert this analysis into a formal scientific report format: {analysis}"
-        
-        report = self.llm.invoke(prompt)
-        return {"final_summary": report.content}
+    def analyst(self, state):
+        """Node for summarizing data."""
+        data = state["data"]
+        summary = self.llm.invoke(f"Summarize this research: {data}")
+        return {"messages": [f"Analysis complete."], "summary": summary.content}
