@@ -11,8 +11,8 @@ from vector_store import create_vector_store, retrieve_context
 # LLM
 # =========================
 groq_api_key = st.secrets["GROQ_API_KEY"]
-llm = ChatGroq(groq_api_key=groq_api_key, model="llama-3.3-70b-versatile")
-
+#llm = ChatGroq(groq_api_key=groq_api_key, model="llama-3.3-70b-versatile")
+llm = "groq/llama-3.3-70b-versatile"
 st.title("📚 AI Research Assistant (RAG + Debate AI)")
 
 uploaded_files = st.file_uploader("Upload PDFs", accept_multiple_files=True)
