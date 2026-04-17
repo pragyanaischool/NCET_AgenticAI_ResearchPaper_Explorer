@@ -1,54 +1,44 @@
-import fitz
-import requests
-from utils import clean_text
+import os
+from langchain_community.utilities import SerpAPIWrapper
+from langchain_community.document_loaders import PyMuPDFLoader
+from langchain_community.vectorstores import FAISS
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.tools import tool
+from dotenv import load_dotenv
 
-# =========================
-# 📄 PDF EXTRACTION
-# =========================
-def extract_pdf_text(file):
-    doc = fitz.open(stream=file.read(), filetype="pdf")
-    text = ""
+load_dotenv()
 
-    for i, page in enumerate(doc):
-        text += f"\n--- Page {i+1} ---\n"
-        text += page.get_text()
+class ResearchTools:
+    def __init__(self):
+        self.search = SerpAPIWrapper()
+        # Initialize embeddings for RAG (Research Augmented Generation)
+        self.embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+        self.text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
 
-    return clean_text(text)
+    @tool
+    def search_papers(self, query: str):
+        """Searches the web and academic databases for research papers using SerpAPI."""
+        return self.search.run(f"site:arxiv.org OR site:researchgate.net {query}")
 
-
-def extract_multiple_pdfs(files):
-    all_text = []
-
-    for file in files:
+    @tool
+    def process_pdf(self, pdf_url: str):
+        """Downloads and extracts text from a PDF URL to be used for deep analysis."""
         try:
-            text = extract_pdf_text(file)
-            labeled = f"""
-========================
-FILE: {file.name}
-========================
-{text}
-"""
-            all_text.append(labeled)
+            loader = PyMuPDFLoader(pdf_url)
+            data = loader.load()
+            # Combine all pages
+            full_text = " ".join([page.page_content for page in data])
+            return full_text[:10000]  # Return first 10k chars to stay within context limits
         except Exception as e:
-            all_text.append(f"Error reading {file.name}: {str(e)}")
+            return f"Error processing PDF: {str(e)}"
 
-    return "\n\n".join(all_text)
+    def create_vector_store(self, text: str):
+        """Converts raw text into a searchable FAISS vector database."""
+        chunks = self.text_splitter.split_text(text)
+        vector_db = FAISS.from_texts(chunks, self.embeddings)
+        return vector_db
 
-
-# =========================
-# 🌐 ARXIV
-# =========================
-def fetch_arxiv_paper(url):
-    try:
-        paper_id = url.split("/")[-1]
-        api_url = f"http://export.arxiv.org/api/query?id_list={paper_id}"
-        res = requests.get(api_url)
-
-        return f"""
-========================
-ARXIV: {paper_id}
-========================
-{clean_text(res.text)}
-"""
-    except Exception as e:
-        return f"Error: {str(e)}"
+# Example of standalone tool initialization
+paper_search_tool = ResearchTools().search_papers
+pdf_tool = ResearchTools().process_pdf
