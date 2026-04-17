@@ -1,20 +1,29 @@
-streamlit
+# --- Core Frameworks ---
+streamlit>=1.40.0
 python-dotenv
-crewai
-langchain
+
+# --- AI Orchestration (CrewAI & LiteLLM) ---
+# Note: Using >=1.83.0 fixes the litellm import error seen in your logs
+crewai>=0.100.0
+litellm>=1.83.0
+
+# --- LangChain Ecosystem ---
+langchain>=0.3.0
 langchain-core
 langchain-groq
-litellm==1.35.0
-groq
 langchain-community
 langchain-text-splitters
-langchain-huggingface
+langchain-huggingface[full]  # [full] includes sentence-transformers & transformers
+
+# --- LLM Providers & Search ---
+groq
+google-search-results
+
+# --- Document Processing & Vector DB ---
 pymupdf
 pypdf
 faiss-cpu
+
+# --- Utilities ---
 requests
 beautifulsoup4
-transformers
-google-search-results
-sentence-transformers
-torchvision
